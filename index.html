@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+    <main>
+
+        <h1>Extração Excel</h1>
+
+        <div class="content">
+            <p>
+                <label for="file">Selecione um arquivo Excel:</label>
+                <input type="file" accept=".xls,.xlsx" id="file" class="input">
+            </p>
+            <p>
+                <label for="src">Digie a chave que deseja procurar:</label>
+                <input type="text" name="src" id="src" class="input">
+    
+            </p>
+
+            <button id="btn">Importar dados</button>
+            <div class="listName">
+
+                <ul id="list">
+
+                </ul>
+
+            </div>
+        </div>
+    </main>
+    <script src="script.js"></script>
+    <script>
+
+        const fileInput = document.querySelector('#file');
+        const list = document.getElementById('list');
+
+
+        const btn = document.querySelector('#btn');
+        btn.addEventListener('click', e => {
+            e.preventDefault();
+
+            if (fileInput.files.length) {
+                let file = fileInput.files[0];
+                let extensionName = file.name.split('.').pop().toLowerCase();
+
+                if (extensionName === 'xls' || extensionName === 'xlsx') {
+
+                    handleFile(file);
+
+                } else {
+                    window.alert('Antes de importar os dados escolha um arquivo .xls ou .xlsx !');
+                }
+            } else {
+
+                window.alert('Antes de importar os dados escolha um arquivo válido!');
+
+            }
+        })
+        console.log(list)
+        function nextColumn(column) {
+            const nextCharCode = column.charCodeAt(0) + 1;
+            return String.fromCharCode(nextCharCode);
+        }//avança para outra coluna
+        function onlyNumber(string) {
+            return string.replace(/\D/g, '');
+        }//extrai os numeros da string
+
+        function handleFile(file) {
+            const reader = new FileReader();
+            reader.onload = function (e) {
+                const data = e.target.result;
+                const workbook = XLSX.read(data, { type: 'binary' });
+                const firstSheetName = workbook.SheetNames[0];
+                const worksheet = workbook.Sheets[firstSheetName];
+                const name = [];//lista de nomes encontrados
+                const range = XLSX.utils.decode_range(worksheet['!ref']);
+
+                for (let R = range.s.r; R <= range.e.r; ++R) {
+                    for (let C = range.s.c; C <= range.e.c; ++C) {
+                        const cellAddress = XLSX.utils.encode_cell({ r: R, c: C });
+                        const cellValue = worksheet[cellAddress] ? worksheet[cellAddress].v : '';
+                        if (cellValue === "Nome:") {
+                            let rowNumber = onlyNumber(cellAddress);
+                            let column = nextColumn(cellAddress.charAt(0));
+                            let cellOfName = column + rowNumber;
+                            name.push(worksheet[cellOfName].v.trim());//trata a string antes de inserir no  array 
+                        }
+                    }
+                }
+
+                let i = 0;
+                name.forEach(n => {
+
+                    i++
+                    const li = document.createElement('li')
+                    li.textContent = `${i}-${n}`;
+                    list.appendChild(li);
+
+                });
+
+            };
+            reader.readAsBinaryString(file);
+        }
+        btn.addEventListener('mouseout', e => {
+            name.length = 0;
+            console.log(name.length)
+        })
+
+    </script>
+</body>
+
+</html>
